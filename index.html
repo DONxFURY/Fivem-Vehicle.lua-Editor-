@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vehicle Editor for FiveM</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+        .vehicle-list {
+            margin-top: 20px;
+        }
+        .vehicle-item {
+            margin-bottom: 10px;
+        }
+        .vehicle-item input {
+            margin-right: 10px;
+        }
+        .category-select {
+            margin-bottom: 20px;
+        }
+        button {
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Edit FiveM Vehicle Config</h1>
+
+    <label for="category">Select Category:</label>
+    <select id="category" class="category-select">
+        <option value="Mini Customs">Mini Customs</option>
+        <option value="Luxury">Luxury</option>
+        <option value="Sports">Sports</option>
+    </select>
+
+    <button id="add-vehicle">Add Vehicle</button>
+
+    <div class="vehicle-list" id="vehicle-list">
+        <!-- Vehicle items will be listed here -->
+    </div>
+
+    <button id="save-changes">Download Vehicle.lua</button>
+
+    <script>
+        const vehicleList = document.getElementById('vehicle-list');
+        const categorySelect = document.getElementById('category');
+        const addVehicleBtn = document.getElementById('add-vehicle');
+        const saveChangesBtn = document.getElementById('save-changes');
+
+        let vehicles = [];
+
+        // Function to render the vehicles
+        function renderVehicles() {
+            vehicleList.innerHTML = '';  // Clear the list before rendering
+            vehicles.forEach((vehicle, index) => {
+                const vehicleItem = document.createElement('div');
+                vehicleItem.className = 'vehicle-item';
+
+                vehicleItem.innerHTML = `
+                    <input type="text" value="${vehicle.model}" placeholder="Model" data-index="${index}" data-field="model">
+                    <input type="text" value="${vehicle.name}" placeholder="Name" data-index="${index}" data-field="name">
+                    <input type="text" value="${vehicle.brand}" placeholder="Brand" data-index="${index}" data-field="brand">
+                    <input type="number" value="${vehicle.price}" placeholder="Price" data-index="${index}" data-field="price">
+                    <input type="text" value="${vehicle.category}" placeholder="Category" data-index="${index}" data-field="category">
+                    <input type="text" value="${vehicle.type}" placeholder="Type" data-index="${index}" data-field="type">
+                    <input type="text" value="${vehicle.shop}" placeholder="Shop" data-index="${index}" data-field="shop">
+                    <button onclick="removeVehicle(${index})">Remove</button>
+                `;
+                
+                vehicleList.appendChild(vehicleItem);
+            });
+        }
+
+        // Function to handle changes on the vehicle inputs
+        vehicleList.addEventListener('input', function (e) {
+            if (e.target.tagName.toLowerCase() === 'input') {
+                const index = e.target.getAttribute('data-index');
+                const field = e.target.getAttribute('data-field');
+                vehicles[index][field] = e.target.value;
+            }
+        });
+
+        // Add a new vehicle
+        addVehicleBtn.addEventListener('click', function () {
+            const newVehicle = {
+                model: '',
+                name: '',
+                brand: '',
+                price: 0,
+                category: categorySelect.value,
+                type: 'automobile',
+                shop: 'none'
+            };
+
+            vehicles.push(newVehicle);
+            renderVehicles();
+        });
+
+        // Remove a vehicle
+        function removeVehicle(index) {
+            vehicles.splice(index, 1);
+            renderVehicles();
+        }
+
+        // Save changes to a Lua file (downloadable)
+        saveChangesBtn.addEventListener('click', function () {
+            const luaContent = generateLuaContent();
+            downloadLuaFile(luaContent, 'vehicle.lua');
+        });
+
+        // Generate the Lua content based on the vehicles array
+        function generateLuaContent() {
+            let lua = '';
+            vehicles.forEach(vehicle => {
+                lua += `  { model = '${vehicle.model}',   name = '${vehicle.name}',          brand = '${vehicle.brand}',     price = ${vehicle.price},  category = '${vehicle.category}', type = '${vehicle.type}', shop = '${vehicle.shop}' },\n`;
+            });
+            return lua;
+        }
+
+        // Trigger the download of the Lua file
+        function downloadLuaFile(content, filename) {
+            const blob = new Blob([content], { type: 'text/plain' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = filename;
+            link.click();
+        }
+
+        // Initial setup
+        renderVehicles();
+    </script>
+</body>
+</html>
