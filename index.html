@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FiveM Vehicle Config Editor Pro</title>
+    <title>FiveM Vehicle Config Editor</title>
     <style>
         :root {
             --primary: #2563eb;
@@ -197,7 +197,6 @@
             </div>
             <div class="actions">
                 <button id="add-vehicle" class="success">🚗 Add Vehicle</button>
-                <button id="import-json" class="secondary">📥 Import JSON</button>
                 <button id="import-lua" class="secondary">📥 Import Lua</button>
             </div>
         </div>
@@ -206,18 +205,17 @@
     <div class="vehicle-grid" id="vehicle-list"></div>
 
     <div class="toolbar">
-        <button id="export-json" class="secondary">📤 Export JSON</button>
+        <button id="clear-all" class="danger">⚠️ Clear All Data</button>
         <button id="save-lua" class="success">💾 Download vehicle.lua</button>
     </div>
 
     <div class="toast" id="toast"></div>
 
     <script>
-        const DEFAULT_CATEGORIES = ['Mini Customs', 'Luxury', 'Sports'];
-        
         const state = {
             vehicles: JSON.parse(localStorage.getItem('vehicles') || '[]'),
-            categories: JSON.parse(localStorage.getItem('categories') || JSON.stringify(DEFAULT_CATEGORIES))
+            categories: JSON.parse(localStorage.getItem('categories') || '[]'),
+            shopTypes: new Set(['none'])
         };
 
         const elements = {
@@ -228,7 +226,8 @@
             addCategoryBtn: document.getElementById('add-category'),
             newCategoryInput: document.getElementById('new-category'),
             categoryList: document.getElementById('category-list'),
-            toast: document.getElementById('toast')
+            toast: document.getElementById('toast'),
+            clearAllBtn: document.getElementById('clear-all')
         };
 
         function init() {
@@ -264,7 +263,7 @@
                 .map(c => `
                     <div class="pill">
                         ${c} <span class="category-count">${counts[c] || 0}</span>
-                        ${DEFAULT_CATEGORIES.includes(c) ? '' : `<button data-category="${c}">×</button>`}
+                        <button data-category="${c}">×</button>
                     </div>
                 `).join('');
         }
@@ -295,10 +294,9 @@
                                 <option value="helicopter" ${vehicle.type === 'helicopter' ? 'selected' : ''}>Helicopter</option>
                             </select>
                             <select data-index="${index}" data-field="shop">
-                                <option value="none" ${vehicle.shop === 'none' ? 'selected' : ''}>None</option>
-                                <option value="luxury" ${vehicle.shop === 'luxury' ? 'selected' : ''}>Luxury</option>
-                                <option value="sports" ${vehicle.shop === 'sports' ? 'selected' : ''}>Sports</option>
-                                <option value="customs" ${vehicle.shop === 'customs' ? 'selected' : ''}>Customs</option>
+                                ${Array.from(state.shopTypes).map(s => `
+                                    <option value="${s}" ${s === vehicle.shop ? 'selected' : ''}>${s}</option>
+                                `).join('')}
                             </select>
                         </div>
                         <div class="actions">
@@ -316,20 +314,30 @@
         }
 
         function parseLuaData(luaContent) {
+            const shopPattern = /shop\s*=\s*'([^']+)'/g;
+            const foundShopTypes = new Set(['none']);
+            let shopMatch;
+            
+            while ((shopMatch = shopPattern.exec(luaContent)) !== null) {
+                foundShopTypes.add(shopMatch[1]);
+            }
+
+            state.shopTypes = foundShopTypes;
+
             const vehiclePattern = /{[\s\S]*?model\s*=\s*'([^']+)'[\s\S]*?name\s*=\s*'([^']+)'[\s\S]*?brand\s*=\s*'([^']+)'[\s\S]*?price\s*=\s*(\d+)[\s\S]*?category\s*=\s*'([^']+)'[\s\S]*?type\s*=\s*'([^']+)'[\s\S]*?shop\s*=\s*'([^']+)'/g;
             
             const vehicles = [];
-            let match;
+            let vehicleMatch;
             
-            while ((match = vehiclePattern.exec(luaContent)) !== null) {
+            while ((vehicleMatch = vehiclePattern.exec(luaContent)) !== null) {
                 vehicles.push({
-                    model: match[1],
-                    name: match[2],
-                    brand: match[3],
-                    price: parseInt(match[4]),
-                    category: match[5],
-                    type: match[6],
-                    shop: match[7]
+                    model: vehicleMatch[1],
+                    name: vehicleMatch[2],
+                    brand: vehicleMatch[3],
+                    price: parseInt(vehicleMatch[4]),
+                    category: vehicleMatch[5],
+                    type: vehicleMatch[6],
+                    shop: vehicleMatch[7]
                 });
             }
             
@@ -355,6 +363,17 @@
             });
 
             return luaContent.slice(0, -2) + '\n}';
+        }
+
+        function clearAllData() {
+            if(confirm('⚠️ Are you sure you want to delete ALL vehicles and categories? This cannot be undone!')) {
+                state.vehicles = [];
+                state.categories = [];
+                state.shopTypes = new Set(['none']);
+                saveState();
+                init();
+                showToast('All data cleared successfully');
+            }
         }
 
         function setupEventListeners() {
@@ -416,41 +435,6 @@
                 showToast('Vehicle added');
             });
 
-            document.getElementById('export-json').addEventListener('click', () => {
-                const data = JSON.stringify(state, null, 2);
-                const blob = new Blob([data], { type: 'application/json' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = 'vehicle-config.json';
-                a.click();
-                showToast('Exported JSON');
-            });
-
-            document.getElementById('import-json').addEventListener('click', () => {
-                const input = document.createElement('input');
-                input.type = 'file';
-                input.accept = 'application/json';
-                input.onchange = e => {
-                    const file = e.target.files[0];
-                    const reader = new FileReader();
-                    reader.onload = () => {
-                        try {
-                            const data = JSON.parse(reader.result);
-                            state.vehicles = data.vehicles || [];
-                            state.categories = data.categories || [];
-                            saveState();
-                            init();
-                            showToast('Imported JSON');
-                        } catch {
-                            showToast('Invalid JSON', 'error');
-                        }
-                    };
-                    reader.readAsText(file);
-                };
-                input.click();
-            });
-
             document.getElementById('import-lua').addEventListener('click', () => {
                 const input = document.createElement('input');
                 input.type = 'file';
@@ -484,8 +468,10 @@
                 a.href = url;
                 a.download = 'vehicle.lua';
                 a.click();
-                showToast('Exported Lua');
+                showToast('Lua file exported');
             });
+
+            elements.clearAllBtn.addEventListener('click', clearAllData);
         }
 
         init();
