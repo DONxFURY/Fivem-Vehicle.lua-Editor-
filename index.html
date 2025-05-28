@@ -3,64 +3,109 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FiveM Vehicle Config Editor</title>
+    <title>FiveM Vehicle Config Editor Pro</title>
     <style>
         :root {
-            --primary-color: #2c3e50;
-            --secondary-color: #3498db;
-            --background-color: #f5f6fa;
-            --input-bg: #ffffff;
-            --border-color: #dcdde1;
+            --primary: #2563eb;
+            --secondary: #3b82f6;
+            --danger: #ef4444;
+            --success: #22c55e;
+            --background: #f8fafc;
+            --card-bg: #ffffff;
+            --text: #1e293b;
+            --border: #e2e8f0;
+            --radius: 8px;
+            --shadow: 0 1px 3px rgba(0,0,0,0.1);
+            --transition: all 0.2s ease;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --background: #0f172a;
+                --card-bg: #1e293b;
+                --text: #f8fafc;
+                --border: #334155;
+            }
         }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: var(--background-color);
+            font-family: 'Inter', system-ui, sans-serif;
+            background: var(--background);
+            color: var(--text);
+            line-height: 1.6;
             padding: 2rem;
-            max-width: 1200px;
+            max-width: 1400px;
             margin: 0 auto;
         }
 
         h1 {
-            color: var(--primary-color);
             text-align: center;
-            margin-bottom: 2rem;
+            margin: 2rem 0;
+            font-weight: 700;
+            color: var(--primary);
         }
 
-        .controls {
-            background: white;
-            padding: 1.5rem;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            margin-bottom: 2rem;
-        }
-
-        .category-management {
-            display: flex;
+        .toolbar {
+            display: grid;
             gap: 1rem;
-            margin-bottom: 1.5rem;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            margin-bottom: 2rem;
         }
 
-        input, select {
-            padding: 0.8rem;
-            border: 1px solid var(--border-color);
-            border-radius: 4px;
-            background: var(--input-bg);
+        .card {
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            padding: 1.5rem;
+            box-shadow: var(--shadow);
+            transition: var(--transition);
+        }
+
+        .input-group {
+            margin-bottom: 1rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+
+        input, select, button {
             width: 100%;
+            padding: 0.75rem;
+            border: 2px solid var(--border);
+            border-radius: var(--radius);
+            background: var(--card-bg);
+            color: var(--text);
+            transition: var(--transition);
+        }
+
+        input:focus, select:focus {
+            border-color: var(--primary);
+            outline: none;
         }
 
         button {
-            background-color: var(--secondary-color);
+            background: var(--primary);
             color: white;
             border: none;
-            padding: 0.8rem 1.5rem;
-            border-radius: 4px;
             cursor: pointer;
-            transition: opacity 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            justify-content: center;
         }
 
         button:hover {
-            opacity: 0.9;
+            background: var(--secondary);
+        }
+
+        .danger {
+            background: var(--danger);
+        }
+
+        .success {
+            background: var(--success);
         }
 
         .pill-list {
@@ -71,272 +116,379 @@
         }
 
         .pill {
-            background: #e0e0e0;
-            padding: 0.4rem 1rem;
+            background: var(--background);
+            padding: 0.5rem 1rem;
             border-radius: 20px;
-            display: flex;
+            display: inline-flex;
             align-items: center;
             gap: 0.5rem;
+            font-size: 0.9rem;
         }
 
         .pill button {
             background: none;
-            color: #ff4444;
+            color: var(--danger);
             padding: 0;
-            font-size: 1.2rem;
+            width: auto;
         }
 
-        .vehicle-list {
+        .vehicle-grid {
             display: grid;
             gap: 1.5rem;
-            margin-top: 2rem;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
         }
 
-        .vehicle-card {
-            background: white;
-            padding: 1.5rem;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-
-        .vehicle-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1rem;
-        }
-
-        .vehicle-fields {
+        .vehicle-card .fields {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
             gap: 1rem;
+            grid-template-columns: repeat(2, 1fr);
         }
 
-        .remove-btn {
-            background: #ff4444;
+        .vehicle-card h3 {
+            margin: 0 0 1rem;
+            font-size: 1.1rem;
         }
 
-        .download-btn {
-            background: #27ae60;
-            display: block;
-            width: 100%;
-            margin-top: 2rem;
+        .actions {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 1rem;
+            right: 1rem;
+            background: var(--card-bg);
+            padding: 1rem;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            display: none;
+        }
+
+        .category-count {
+            margin-left: 0.5rem;
+            background: var(--primary);
+            color: white;
+            padding: 0.2rem 0.5rem;
+            border-radius: 10px;
+            font-size: 0.8rem;
         }
     </style>
 </head>
 <body>
-    <h1>FiveM Vehicle Configuration Editor</h1>
+    <h1>🚗 FiveM Vehicle Configuration Manager</h1>
 
-    <div class="controls">
-        <div class="category-management">
-            <input type="text" id="new-category" placeholder="Enter new category name">
-            <button id="add-category">➕ Add Category</button>
+    <div class="toolbar">
+        <div class="card">
+            <h2>Categories</h2>
+            <div class="input-group">
+                <input type="text" id="new-category" placeholder="New category name">
+                <button id="add-category" class="success">➕ Add Category</button>
+            </div>
+            <div class="pill-list" id="category-list"></div>
         </div>
-        <div class="pill-list" id="category-list"></div>
+
+        <div class="card">
+            <h2>Vehicle Management</h2>
+            <div class="input-group">
+                <label for="category">Select Category</label>
+                <select id="category"></select>
+            </div>
+            <div class="actions">
+                <button id="add-vehicle" class="success">🚗 Add Vehicle</button>
+                <button id="import-json" class="secondary">📥 Import JSON</button>
+                <button id="import-lua" class="secondary">📥 Import Lua</button>
+            </div>
+        </div>
     </div>
 
-    <div class="controls">
-        <div class="category-management">
-            <select id="category" class="category-select"></select>
-            <button id="add-vehicle">➕ Add Vehicle</button>
-        </div>
+    <div class="vehicle-grid" id="vehicle-list"></div>
+
+    <div class="toolbar">
+        <button id="export-json" class="secondary">📤 Export JSON</button>
+        <button id="save-lua" class="success">💾 Download vehicle.lua</button>
     </div>
 
-    <div class="vehicle-list" id="vehicle-list"></div>
-
-    <button id="save-changes" class="download-btn">💾 Download Vehicle.lua</button>
+    <div class="toast" id="toast"></div>
 
     <script>
-        const VEHICLE_TYPES = ['automobile', 'bike', 'boat', 'helicopter'];
-        const SHOP_TYPES = ['none', 'luxury', 'sports', 'customs'];
         const DEFAULT_CATEGORIES = ['Mini Customs', 'Luxury', 'Sports'];
+        
+        const state = {
+            vehicles: JSON.parse(localStorage.getItem('vehicles') || '[]'),
+            categories: JSON.parse(localStorage.getItem('categories') || JSON.stringify(DEFAULT_CATEGORIES))
+        };
 
-        let vehicles = JSON.parse(localStorage.getItem('vehicles') || '[]');
-        let customCategories = JSON.parse(localStorage.getItem('vehicleCategories') || '[]');
-
-        const getAllCategories = () => [...new Set([...DEFAULT_CATEGORIES, ...customCategories])];
-
-        // DOM Elements
         const elements = {
             vehicleList: document.getElementById('vehicle-list'),
             categorySelect: document.getElementById('category'),
             addVehicleBtn: document.getElementById('add-vehicle'),
-            saveChangesBtn: document.getElementById('save-changes'),
+            saveLuaBtn: document.getElementById('save-lua'),
             addCategoryBtn: document.getElementById('add-category'),
             newCategoryInput: document.getElementById('new-category'),
-            categoryList: document.getElementById('category-list')
+            categoryList: document.getElementById('category-list'),
+            toast: document.getElementById('toast')
         };
 
-        // Initialize
-        renderCategories();
-        renderVehicles();
+        function init() {
+            renderCategories();
+            renderVehicles();
+            setupEventListeners();
+        }
 
-        // Category Management
-        function updateCategoryStorage() {
-            localStorage.setItem('vehicleCategories', JSON.stringify(customCategories));
+        function showToast(message, type = 'info') {
+            elements.toast.textContent = message;
+            elements.toast.style.display = 'block';
+            setTimeout(() => {
+                elements.toast.style.display = 'none';
+            }, 3000);
+        }
+
+        function getCategoryCounts() {
+            const counts = {};
+            state.vehicles.forEach(vehicle => {
+                counts[vehicle.category] = (counts[vehicle.category] || 0) + 1;
+            });
+            return counts;
         }
 
         function renderCategories() {
-            const categories = getAllCategories();
+            const counts = getCategoryCounts();
             
-            elements.categorySelect.innerHTML = categories.map(c => 
-                `<option value="${c}">${c}</option>`
-            ).join('');
+            elements.categorySelect.innerHTML = state.categories
+                .map(c => `<option value="${c}">${c} (${counts[c] || 0})</option>`)
+                .join('');
 
-            elements.categoryList.innerHTML = categories.map(c => `
-                <div class="pill">
-                    ${c}
-                    ${DEFAULT_CATEGORIES.includes(c) ? '' : `<button data-category="${c}">×</button>`}
-                </div>
-            `).join('');
-        }
-
-        function addCategory(newCategory) {
-            if (!newCategory.trim()) return;
-            if (!getAllCategories().includes(newCategory)) {
-                customCategories.push(newCategory.trim());
-                updateCategoryStorage();
-                renderCategories();
-                renderVehicles();
-            }
-        }
-
-        function removeCategory(categoryToRemove) {
-            customCategories = customCategories.filter(c => c !== categoryToRemove);
-            updateCategoryStorage();
-            renderCategories();
-            
-            vehicles.forEach(vehicle => {
-                if (vehicle.category === categoryToRemove) {
-                    vehicle.category = elements.categorySelect.value;
-                }
-            });
-            saveVehicles();
-            renderVehicles();
-        }
-
-        // Vehicle Management
-        function createInput(value, placeholder, index, field, type = 'text') {
-            const input = document.createElement('input');
-            input.type = type;
-            input.value = value;
-            input.placeholder = placeholder;
-            input.dataset.index = index;
-            input.dataset.field = field;
-            return input;
-        }
-
-        function createSelect(value, options, index, field) {
-            const select = document.createElement('select');
-            select.dataset.index = index;
-            select.dataset.field = field;
-            
-            options.forEach(option => {
-                const opt = document.createElement('option');
-                opt.value = option;
-                opt.textContent = option;
-                opt.selected = option === value;
-                select.appendChild(opt);
-            });
-            return select;
+            elements.categoryList.innerHTML = state.categories
+                .map(c => `
+                    <div class="pill">
+                        ${c} <span class="category-count">${counts[c] || 0}</span>
+                        ${DEFAULT_CATEGORIES.includes(c) ? '' : `<button data-category="${c}">×</button>`}
+                    </div>
+                `).join('');
         }
 
         function renderVehicles() {
-            elements.vehicleList.innerHTML = '';
-            
-            vehicles.forEach((vehicle, index) => {
-                const card = document.createElement('div');
-                card.className = 'vehicle-card';
-
-                card.innerHTML = `
-                    <div class="vehicle-header">
+            elements.vehicleList.innerHTML = state.vehicles
+                .map((vehicle, index) => `
+                    <div class="card vehicle-card">
                         <h3>${vehicle.name || 'New Vehicle'}</h3>
-                        <button class="remove-btn" data-index="${index}">🗑️ Remove</button>
+                        <div class="fields">
+                            <input type="text" value="${vehicle.model}" 
+                                   placeholder="Model" data-index="${index}" data-field="model">
+                            <input type="text" value="${vehicle.name}" 
+                                   placeholder="Name" data-index="${index}" data-field="name">
+                            <input type="text" value="${vehicle.brand}" 
+                                   placeholder="Brand" data-index="${index}" data-field="brand">
+                            <input type="number" value="${vehicle.price}" 
+                                   placeholder="Price" data-index="${index}" data-field="price">
+                            <select data-index="${index}" data-field="category">
+                                ${state.categories.map(c => `
+                                    <option value="${c}" ${c === vehicle.category ? 'selected' : ''}>${c}</option>
+                                `).join('')}
+                            </select>
+                            <select data-index="${index}" data-field="type">
+                                <option value="automobile" ${vehicle.type === 'automobile' ? 'selected' : ''}>Automobile</option>
+                                <option value="bike" ${vehicle.type === 'bike' ? 'selected' : ''}>Bike</option>
+                                <option value="boat" ${vehicle.type === 'boat' ? 'selected' : ''}>Boat</option>
+                                <option value="helicopter" ${vehicle.type === 'helicopter' ? 'selected' : ''}>Helicopter</option>
+                            </select>
+                            <select data-index="${index}" data-field="shop">
+                                <option value="none" ${vehicle.shop === 'none' ? 'selected' : ''}>None</option>
+                                <option value="luxury" ${vehicle.shop === 'luxury' ? 'selected' : ''}>Luxury</option>
+                                <option value="sports" ${vehicle.shop === 'sports' ? 'selected' : ''}>Sports</option>
+                                <option value="customs" ${vehicle.shop === 'customs' ? 'selected' : ''}>Customs</option>
+                            </select>
+                        </div>
+                        <div class="actions">
+                            <button class="danger" data-index="${index}">🗑️ Delete</button>
+                        </div>
                     </div>
-                    <div class="vehicle-fields"></div>
-                `;
-
-                const fields = card.querySelector('.vehicle-fields');
-                fields.appendChild(createInput(vehicle.model, 'Vehicle Model', index, 'model'));
-                fields.appendChild(createInput(vehicle.name, 'Display Name', index, 'name'));
-                fields.appendChild(createInput(vehicle.brand, 'Manufacturer', index, 'brand'));
-                fields.appendChild(createInput(vehicle.price, 'Price', index, 'price', 'number'));
-                fields.appendChild(createSelect(vehicle.category, getAllCategories(), index, 'category'));
-                fields.appendChild(createSelect(vehicle.type, VEHICLE_TYPES, index, 'type'));
-                fields.appendChild(createSelect(vehicle.shop, SHOP_TYPES, index, 'shop'));
-
-                elements.vehicleList.appendChild(card);
-            });
-
-            saveVehicles();
-        }
-
-        function saveVehicles() {
-            localStorage.setItem('vehicles', JSON.stringify(vehicles));
-        }
-
-        // Event Listeners
-        elements.vehicleList.addEventListener('input', (e) => {
-            const target = e.target;
-            if (target.tagName === 'INPUT' || target.tagName === 'SELECT') {
-                const index = target.dataset.index;
-                const field = target.dataset.field;
-                vehicles[index][field] = target.value;
-                saveVehicles();
+                `).join('');
                 
-                if (field === 'name') {
-                    target.closest('.vehicle-card').querySelector('h3').textContent = target.value || 'New Vehicle';
-                }
-            }
-        });
+            renderCategories();
+        }
 
-        elements.addVehicleBtn.addEventListener('click', () => {
-            vehicles.push({
-                model: '',
-                name: '',
-                brand: '',
-                price: 0,
-                category: elements.categorySelect.value,
-                type: 'automobile',
-                shop: 'none'
-            });
-            renderVehicles();
-        });
+        function saveState() {
+            localStorage.setItem('vehicles', JSON.stringify(state.vehicles));
+            localStorage.setItem('categories', JSON.stringify(state.categories));
+        }
 
-        elements.vehicleList.addEventListener('click', (e) => {
-            if (e.target.classList.contains('remove-btn')) {
-                const index = e.target.dataset.index;
-                vehicles.splice(index, 1);
-                renderVehicles();
-            }
-        });
-
-        elements.addCategoryBtn.addEventListener('click', () => {
-            addCategory(elements.newCategoryInput.value);
-            elements.newCategoryInput.value = '';
-        });
-
-        elements.categoryList.addEventListener('click', (e) => {
-            if (e.target.tagName === 'BUTTON') {
-                const category = e.target.dataset.category;
-                if (confirm(`Remove category "${category}"? Vehicles using this category will be updated.`)) {
-                    removeCategory(category);
-                }
-            }
-        });
-
-        elements.saveChangesBtn.addEventListener('click', () => {
-            const luaContent = vehicles.map(vehicle => 
-                `  { model = '${vehicle.model}', name = '${vehicle.name}', brand = '${vehicle.brand}', ` +
-                `price = ${vehicle.price}, category = '${vehicle.category}', type = '${vehicle.type}', shop = '${vehicle.shop}' },`
-            ).join('\n');
+        function parseLuaData(luaContent) {
+            const vehiclePattern = /{[\s\S]*?model\s*=\s*'([^']+)'[\s\S]*?name\s*=\s*'([^']+)'[\s\S]*?brand\s*=\s*'([^']+)'[\s\S]*?price\s*=\s*(\d+)[\s\S]*?category\s*=\s*'([^']+)'[\s\S]*?type\s*=\s*'([^']+)'[\s\S]*?shop\s*=\s*'([^']+)'/g;
             
-            const blob = new Blob([luaContent], { type: 'text/plain' });
-            const link = document.createElement('a');
-            link.href = URL.createObjectURL(blob);
-            link.download = 'vehicle.lua';
-            link.click();
-        });
+            const vehicles = [];
+            let match;
+            
+            while ((match = vehiclePattern.exec(luaContent)) !== null) {
+                vehicles.push({
+                    model: match[1],
+                    name: match[2],
+                    brand: match[3],
+                    price: parseInt(match[4]),
+                    category: match[5],
+                    type: match[6],
+                    shop: match[7]
+                });
+            }
+            
+            return vehicles;
+        }
+
+        function generateLuaContent() {
+            const grouped = {};
+            state.vehicles.forEach(vehicle => {
+                if (!grouped[vehicle.category]) grouped[vehicle.category] = [];
+                grouped[vehicle.category].push(vehicle);
+            });
+
+            let luaContent = 'return {\n';
+            
+            Object.entries(grouped).forEach(([category, vehicles]) => {
+                luaContent += `\t--- ${category} (${vehicles.length})\n`;
+                vehicles.forEach(vehicle => {
+                    luaContent += `\t{ model = '${vehicle.model}', name = '${vehicle.name}', brand = '${vehicle.brand}', ` +
+                                  `price = ${vehicle.price}, category = '${vehicle.category}', ` +
+                                  `type = '${vehicle.type}', shop = '${vehicle.shop}' },\n`;
+                });
+            });
+
+            return luaContent.slice(0, -2) + '\n}';
+        }
+
+        function setupEventListeners() {
+            elements.vehicleList.addEventListener('input', e => {
+                const target = e.target;
+                if (target.matches('input, select')) {
+                    const index = target.dataset.index;
+                    const field = target.dataset.field;
+                    state.vehicles[index][field] = target.value;
+                    saveState();
+                    renderCategories();
+                }
+            });
+
+            elements.vehicleList.addEventListener('click', e => {
+                if (e.target.classList.contains('danger')) {
+                    const index = e.target.dataset.index;
+                    state.vehicles.splice(index, 1);
+                    renderVehicles();
+                    saveState();
+                    showToast('Vehicle removed');
+                }
+            });
+
+            elements.addCategoryBtn.addEventListener('click', () => {
+                const newCat = elements.newCategoryInput.value.trim();
+                if (!newCat) return showToast('Enter category name', 'error');
+                if (state.categories.includes(newCat)) return showToast('Category exists', 'error');
+                
+                state.categories.push(newCat);
+                elements.newCategoryInput.value = '';
+                renderCategories();
+                saveState();
+                showToast(`Added ${newCat}`);
+            });
+
+            elements.categoryList.addEventListener('click', e => {
+                if (e.target.tagName === 'BUTTON') {
+                    const category = e.target.dataset.category;
+                    state.categories = state.categories.filter(c => c !== category);
+                    renderCategories();
+                    saveState();
+                    showToast(`Removed ${category}`);
+                }
+            });
+
+            elements.addVehicleBtn.addEventListener('click', () => {
+                state.vehicles.push({
+                    model: '',
+                    name: '',
+                    brand: '',
+                    price: 0,
+                    category: elements.categorySelect.value,
+                    type: 'automobile',
+                    shop: 'none'
+                });
+                renderVehicles();
+                saveState();
+                showToast('Vehicle added');
+            });
+
+            document.getElementById('export-json').addEventListener('click', () => {
+                const data = JSON.stringify(state, null, 2);
+                const blob = new Blob([data], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'vehicle-config.json';
+                a.click();
+                showToast('Exported JSON');
+            });
+
+            document.getElementById('import-json').addEventListener('click', () => {
+                const input = document.createElement('input');
+                input.type = 'file';
+                input.accept = 'application/json';
+                input.onchange = e => {
+                    const file = e.target.files[0];
+                    const reader = new FileReader();
+                    reader.onload = () => {
+                        try {
+                            const data = JSON.parse(reader.result);
+                            state.vehicles = data.vehicles || [];
+                            state.categories = data.categories || [];
+                            saveState();
+                            init();
+                            showToast('Imported JSON');
+                        } catch {
+                            showToast('Invalid JSON', 'error');
+                        }
+                    };
+                    reader.readAsText(file);
+                };
+                input.click();
+            });
+
+            document.getElementById('import-lua').addEventListener('click', () => {
+                const input = document.createElement('input');
+                input.type = 'file';
+                input.accept = '.lua';
+                input.onchange = e => {
+                    const file = e.target.files[0];
+                    const reader = new FileReader();
+                    reader.onload = () => {
+                        try {
+                            const vehicles = parseLuaData(reader.result);
+                            state.vehicles = vehicles;
+                            const newCategories = [...new Set(vehicles.map(v => v.category))];
+                            state.categories = Array.from(new Set([...state.categories, ...newCategories]));
+                            saveState();
+                            init();
+                            showToast(`Imported ${vehicles.length} vehicles`);
+                        } catch (e) {
+                            showToast('Invalid Lua file', 'error');
+                        }
+                    };
+                    reader.readAsText(file);
+                };
+                input.click();
+            });
+
+            elements.saveLuaBtn.addEventListener('click', () => {
+                const luaContent = generateLuaContent();
+                const blob = new Blob([luaContent], { type: 'text/plain' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'vehicle.lua';
+                a.click();
+                showToast('Exported Lua');
+            });
+        }
+
+        init();
     </script>
 </body>
 </html>
