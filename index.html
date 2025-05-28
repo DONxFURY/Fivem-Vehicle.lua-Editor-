@@ -3,134 +3,340 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vehicle Editor for FiveM</title>
+    <title>FiveM Vehicle Config Editor</title>
     <style>
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #3498db;
+            --background-color: #f5f6fa;
+            --input-bg: #ffffff;
+            --border-color: #dcdde1;
+        }
+
         body {
-            font-family: Arial, sans-serif;
-            padding: 20px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--background-color);
+            padding: 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
         }
-        .vehicle-list {
-            margin-top: 20px;
+
+        h1 {
+            color: var(--primary-color);
+            text-align: center;
+            margin-bottom: 2rem;
         }
-        .vehicle-item {
-            margin-bottom: 10px;
+
+        .controls {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 2rem;
         }
-        .vehicle-item input {
-            margin-right: 10px;
+
+        .category-management {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
         }
-        .category-select {
-            margin-bottom: 20px;
+
+        input, select {
+            padding: 0.8rem;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            background: var(--input-bg);
+            width: 100%;
         }
+
         button {
-            margin-top: 10px;
+            background-color: var(--secondary-color);
+            color: white;
+            border: none;
+            padding: 0.8rem 1.5rem;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+
+        button:hover {
+            opacity: 0.9;
+        }
+
+        .pill-list {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            margin-top: 1rem;
+        }
+
+        .pill {
+            background: #e0e0e0;
+            padding: 0.4rem 1rem;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .pill button {
+            background: none;
+            color: #ff4444;
+            padding: 0;
+            font-size: 1.2rem;
+        }
+
+        .vehicle-list {
+            display: grid;
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+
+        .vehicle-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .vehicle-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .vehicle-fields {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+
+        .remove-btn {
+            background: #ff4444;
+        }
+
+        .download-btn {
+            background: #27ae60;
+            display: block;
+            width: 100%;
+            margin-top: 2rem;
         }
     </style>
 </head>
 <body>
-    <h1>Edit FiveM Vehicle Config</h1>
+    <h1>FiveM Vehicle Configuration Editor</h1>
 
-    <label for="category">Select Category:</label>
-    <select id="category" class="category-select">
-        <option value="Mini Customs">Mini Customs</option>
-        <option value="Luxury">Luxury</option>
-        <option value="Sports">Sports</option>
-    </select>
-
-    <button id="add-vehicle">Add Vehicle</button>
-
-    <div class="vehicle-list" id="vehicle-list">
-        <!-- Vehicle items will be listed here -->
+    <div class="controls">
+        <div class="category-management">
+            <input type="text" id="new-category" placeholder="Enter new category name">
+            <button id="add-category">➕ Add Category</button>
+        </div>
+        <div class="pill-list" id="category-list"></div>
     </div>
 
-    <button id="save-changes">Download Vehicle.lua</button>
+    <div class="controls">
+        <div class="category-management">
+            <select id="category" class="category-select"></select>
+            <button id="add-vehicle">➕ Add Vehicle</button>
+        </div>
+    </div>
+
+    <div class="vehicle-list" id="vehicle-list"></div>
+
+    <button id="save-changes" class="download-btn">💾 Download Vehicle.lua</button>
 
     <script>
-        const vehicleList = document.getElementById('vehicle-list');
-        const categorySelect = document.getElementById('category');
-        const addVehicleBtn = document.getElementById('add-vehicle');
-        const saveChangesBtn = document.getElementById('save-changes');
+        const VEHICLE_TYPES = ['automobile', 'bike', 'boat', 'helicopter'];
+        const SHOP_TYPES = ['none', 'luxury', 'sports', 'customs'];
+        const DEFAULT_CATEGORIES = ['Mini Customs', 'Luxury', 'Sports'];
 
-        let vehicles = [];
+        let vehicles = JSON.parse(localStorage.getItem('vehicles') || '[]');
+        let customCategories = JSON.parse(localStorage.getItem('vehicleCategories') || '[]');
 
-        // Function to render the vehicles
-        function renderVehicles() {
-            vehicleList.innerHTML = '';  // Clear the list before rendering
-            vehicles.forEach((vehicle, index) => {
-                const vehicleItem = document.createElement('div');
-                vehicleItem.className = 'vehicle-item';
+        const getAllCategories = () => [...new Set([...DEFAULT_CATEGORIES, ...customCategories])];
 
-                vehicleItem.innerHTML = `
-                    <input type="text" value="${vehicle.model}" placeholder="Model" data-index="${index}" data-field="model">
-                    <input type="text" value="${vehicle.name}" placeholder="Name" data-index="${index}" data-field="name">
-                    <input type="text" value="${vehicle.brand}" placeholder="Brand" data-index="${index}" data-field="brand">
-                    <input type="number" value="${vehicle.price}" placeholder="Price" data-index="${index}" data-field="price">
-                    <input type="text" value="${vehicle.category}" placeholder="Category" data-index="${index}" data-field="category">
-                    <input type="text" value="${vehicle.type}" placeholder="Type" data-index="${index}" data-field="type">
-                    <input type="text" value="${vehicle.shop}" placeholder="Shop" data-index="${index}" data-field="shop">
-                    <button onclick="removeVehicle(${index})">Remove</button>
-                `;
-                
-                vehicleList.appendChild(vehicleItem);
-            });
+        // DOM Elements
+        const elements = {
+            vehicleList: document.getElementById('vehicle-list'),
+            categorySelect: document.getElementById('category'),
+            addVehicleBtn: document.getElementById('add-vehicle'),
+            saveChangesBtn: document.getElementById('save-changes'),
+            addCategoryBtn: document.getElementById('add-category'),
+            newCategoryInput: document.getElementById('new-category'),
+            categoryList: document.getElementById('category-list')
+        };
+
+        // Initialize
+        renderCategories();
+        renderVehicles();
+
+        // Category Management
+        function updateCategoryStorage() {
+            localStorage.setItem('vehicleCategories', JSON.stringify(customCategories));
         }
 
-        // Function to handle changes on the vehicle inputs
-        vehicleList.addEventListener('input', function (e) {
-            if (e.target.tagName.toLowerCase() === 'input') {
-                const index = e.target.getAttribute('data-index');
-                const field = e.target.getAttribute('data-field');
-                vehicles[index][field] = e.target.value;
+        function renderCategories() {
+            const categories = getAllCategories();
+            
+            elements.categorySelect.innerHTML = categories.map(c => 
+                `<option value="${c}">${c}</option>`
+            ).join('');
+
+            elements.categoryList.innerHTML = categories.map(c => `
+                <div class="pill">
+                    ${c}
+                    ${DEFAULT_CATEGORIES.includes(c) ? '' : `<button data-category="${c}">×</button>`}
+                </div>
+            `).join('');
+        }
+
+        function addCategory(newCategory) {
+            if (!newCategory.trim()) return;
+            if (!getAllCategories().includes(newCategory)) {
+                customCategories.push(newCategory.trim());
+                updateCategoryStorage();
+                renderCategories();
+                renderVehicles();
+            }
+        }
+
+        function removeCategory(categoryToRemove) {
+            customCategories = customCategories.filter(c => c !== categoryToRemove);
+            updateCategoryStorage();
+            renderCategories();
+            
+            vehicles.forEach(vehicle => {
+                if (vehicle.category === categoryToRemove) {
+                    vehicle.category = elements.categorySelect.value;
+                }
+            });
+            saveVehicles();
+            renderVehicles();
+        }
+
+        // Vehicle Management
+        function createInput(value, placeholder, index, field, type = 'text') {
+            const input = document.createElement('input');
+            input.type = type;
+            input.value = value;
+            input.placeholder = placeholder;
+            input.dataset.index = index;
+            input.dataset.field = field;
+            return input;
+        }
+
+        function createSelect(value, options, index, field) {
+            const select = document.createElement('select');
+            select.dataset.index = index;
+            select.dataset.field = field;
+            
+            options.forEach(option => {
+                const opt = document.createElement('option');
+                opt.value = option;
+                opt.textContent = option;
+                opt.selected = option === value;
+                select.appendChild(opt);
+            });
+            return select;
+        }
+
+        function renderVehicles() {
+            elements.vehicleList.innerHTML = '';
+            
+            vehicles.forEach((vehicle, index) => {
+                const card = document.createElement('div');
+                card.className = 'vehicle-card';
+
+                card.innerHTML = `
+                    <div class="vehicle-header">
+                        <h3>${vehicle.name || 'New Vehicle'}</h3>
+                        <button class="remove-btn" data-index="${index}">🗑️ Remove</button>
+                    </div>
+                    <div class="vehicle-fields"></div>
+                `;
+
+                const fields = card.querySelector('.vehicle-fields');
+                fields.appendChild(createInput(vehicle.model, 'Vehicle Model', index, 'model'));
+                fields.appendChild(createInput(vehicle.name, 'Display Name', index, 'name'));
+                fields.appendChild(createInput(vehicle.brand, 'Manufacturer', index, 'brand'));
+                fields.appendChild(createInput(vehicle.price, 'Price', index, 'price', 'number'));
+                fields.appendChild(createSelect(vehicle.category, getAllCategories(), index, 'category'));
+                fields.appendChild(createSelect(vehicle.type, VEHICLE_TYPES, index, 'type'));
+                fields.appendChild(createSelect(vehicle.shop, SHOP_TYPES, index, 'shop'));
+
+                elements.vehicleList.appendChild(card);
+            });
+
+            saveVehicles();
+        }
+
+        function saveVehicles() {
+            localStorage.setItem('vehicles', JSON.stringify(vehicles));
+        }
+
+        // Event Listeners
+        elements.vehicleList.addEventListener('input', (e) => {
+            const target = e.target;
+            if (target.tagName === 'INPUT' || target.tagName === 'SELECT') {
+                const index = target.dataset.index;
+                const field = target.dataset.field;
+                vehicles[index][field] = target.value;
+                saveVehicles();
+                
+                if (field === 'name') {
+                    target.closest('.vehicle-card').querySelector('h3').textContent = target.value || 'New Vehicle';
+                }
             }
         });
 
-        // Add a new vehicle
-        addVehicleBtn.addEventListener('click', function () {
-            const newVehicle = {
+        elements.addVehicleBtn.addEventListener('click', () => {
+            vehicles.push({
                 model: '',
                 name: '',
                 brand: '',
                 price: 0,
-                category: categorySelect.value,
+                category: elements.categorySelect.value,
                 type: 'automobile',
                 shop: 'none'
-            };
-
-            vehicles.push(newVehicle);
-            renderVehicles();
-        });
-
-        // Remove a vehicle
-        function removeVehicle(index) {
-            vehicles.splice(index, 1);
-            renderVehicles();
-        }
-
-        // Save changes to a Lua file (downloadable)
-        saveChangesBtn.addEventListener('click', function () {
-            const luaContent = generateLuaContent();
-            downloadLuaFile(luaContent, 'vehicle.lua');
-        });
-
-        // Generate the Lua content based on the vehicles array
-        function generateLuaContent() {
-            let lua = '';
-            vehicles.forEach(vehicle => {
-                lua += `  { model = '${vehicle.model}',   name = '${vehicle.name}',          brand = '${vehicle.brand}',     price = ${vehicle.price},  category = '${vehicle.category}', type = '${vehicle.type}', shop = '${vehicle.shop}' },\n`;
             });
-            return lua;
-        }
+            renderVehicles();
+        });
 
-        // Trigger the download of the Lua file
-        function downloadLuaFile(content, filename) {
-            const blob = new Blob([content], { type: 'text/plain' });
+        elements.vehicleList.addEventListener('click', (e) => {
+            if (e.target.classList.contains('remove-btn')) {
+                const index = e.target.dataset.index;
+                vehicles.splice(index, 1);
+                renderVehicles();
+            }
+        });
+
+        elements.addCategoryBtn.addEventListener('click', () => {
+            addCategory(elements.newCategoryInput.value);
+            elements.newCategoryInput.value = '';
+        });
+
+        elements.categoryList.addEventListener('click', (e) => {
+            if (e.target.tagName === 'BUTTON') {
+                const category = e.target.dataset.category;
+                if (confirm(`Remove category "${category}"? Vehicles using this category will be updated.`)) {
+                    removeCategory(category);
+                }
+            }
+        });
+
+        elements.saveChangesBtn.addEventListener('click', () => {
+            const luaContent = vehicles.map(vehicle => 
+                `  { model = '${vehicle.model}', name = '${vehicle.name}', brand = '${vehicle.brand}', ` +
+                `price = ${vehicle.price}, category = '${vehicle.category}', type = '${vehicle.type}', shop = '${vehicle.shop}' },`
+            ).join('\n');
+            
+            const blob = new Blob([luaContent], { type: 'text/plain' });
             const link = document.createElement('a');
             link.href = URL.createObjectURL(blob);
-            link.download = filename;
+            link.download = 'vehicle.lua';
             link.click();
-        }
-
-        // Initial setup
-        renderVehicles();
+        });
     </script>
 </body>
 </html>
